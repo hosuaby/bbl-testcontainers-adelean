@@ -13,65 +13,266 @@ html
 
       section
         h1 BBL Testcontainers - Adelean - 2020
-
+        
       section
-        h2 Images
-        img(src="images/bespoke-logo.jpg")
-
-      section
-        h2 Keyboard Interaction
-        h3 Powered by <a href="https://github.com/bespokejs/bespoke-keys">bespoke-keys</a>
-
-      section
-        h2 Touch Interaction
-        h3 Powered by <a href="https://github.com/bespokejs/bespoke-touch">bespoke-touch</a>
-
-      section
-        h2 Responsive Slides
-        h3 Powered by <a href="https://github.com/bespokejs/bespoke-scale">bespoke-scale</a>
-
-      section
-        h2 Bullet List
-        h3 Powered by <a href="https://github.com/bespokejs/bespoke-bullets">bespoke-bullets</a>
+        h2 La préhistoire
+        img(src="images/jurassic-landscape.jpg" height="30%")
         ul.build.build-items
-          li Bullet 1
-          li Bullet 2
-          li Bullet 3
+          li Embedded MongoDB
+          li H2 / HSQL
+          
+      section
+        h2 La préhistoire... et ses reliquats
+        img(src="images/jurassic-landscape.jpg" height="30%")
+        ul.build.build-items
+          li Solutions hétérogènes pour les services (plusieurs librairies)
+          li Certaines étaient embarquées (JVM) / Les autres étaient les processus externes
+          li Start / stop / cleanup manuel
 
       section
-        iframe(width="640", height="360", src="https://www.youtube.com/embed/AV3kYPutYfs?rel=0&amp;showinfo=0&amp;controls=0&amp;enablejsapi=1&amp;loop=1&amp;playlist=AV3kYPutYfs", frameborder="0", allowfullscreen, data-volume="0")
+        h2 Naissance des Testcontainers
+        img(src="images/philosoraptor.jpg" height="60%")
 
       section
-        h2 Syntax Highlighting
-        h3 Powered by <a href="https://twitter.com/LeaVerou">Lea Verou</a>'s <a href="https://github.com/PrismJS/prism">Prism</a>
-        pre
-          code.language-javascript.
-            (function() {
-              function hanoi(n, a, b, c) {
-                return n ? hanoi(n - 1, a, c, b)
-                    .concat([[a, b]])
-                    .concat(hanoi(n - 1, c, b, a)) : [];
+        h2 Testcontainers sont les instances lègeres et jétables
+        ul.build.build-items
+          li Pas d'installation des services pour les tests
+          li Pas de bases des données embarquées
+          li Démarrage rapide
+          li Nettoyage automatique
+
+      section
+        h3 Les Testcontainers est une extention de JUnit
+        font(size="-2")
+          pre
+            code.language-java.
+              @Testcontainers
+              class ExampleTestWithElasticsearch {
+              
+                  @Container
+                  ElasticsearchContainer container =
+                          new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
+              
+                  @Test
+                  public void exampleTest() {
+                      container.getHttpHostAddress();
+                      //...
+                  }
               }
-              return hanoi(3, 'left', 'right', 'mid')
-                .map(function(d) {
-                  return d[0] + ' -&gt; ' + d[1];
-                });
-            })();
 
-      section(data-bespoke-hash='named-route')
-        h2 Named Route
-        h3 Powered by <a href="https://github.com/bespokejs/bespoke-hash">bespoke-hash</a>
-        p Look up! This route has been named with a <em>data-bespoke-hash</em> attribute.
       section
-        h2.bullet Just the beginning…
-        ul.build.build-items
-          li Edit <a href="https://pugjs.org">Pug (formerly Jade)</a> markup in <em class="path">src/index.pug</em>
-          li Edit <a href="http://stylus-lang.com">Stylus</a> styles in <em class="path">src/styles/user.styl</em>
-          li Edit JavaScript in <em class="path">src/scripts/main.js</em>
-        br
-        ul.build
-          li
-            strong Enjoy! :)
-            a(href='https://twitter.com/markdalgleish')  -@markdalgleish
+        h1 Les scopes des Testcontainers
 
+      section
+        h3 Scopes - container partagé
+        font(size="-2")
+          pre
+            code.language-java.
+              @Testcontainers
+              class ExampleTestWithElasticsearch {
+              
+                  @Container
+                  static ElasticsearchContainer container =
+                          new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
+              
+                  RestHighLevelClient client;
+              
+                  @BeforeEach
+                  public void init() {
+                      /* We get Elasticsearch host-port */
+                      String httpHostAddress = container.getHttpHostAddress();
+              
+                      RestClientBuilder clientBuilder = RestClient.builder(HttpHost.create(httpHostAddress));
+                      client = new RestHighLevelClient(clientBuilder);
+                  }
+              
+                  @Test
+                  public void exampleTest1() { /* ... */ }
+              
+                  @Test
+                  public void exampleTest2() { /* ... */ }
+              }
+              
+      section
+        h3 Scopes - container singleton
+        font(size="-2")
+          pre
+            code.language-java.
+              /* Attention! Don't add annotation @Testcontainers nor @Container */
+              abstract class AbstractElasticsearchTest {
+                  static ElasticsearchContainer container =
+                          new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
+                  static {
+                      container.start();
+                  }
+              }
+              
+              class ExampleTestWithElasticsearch extends AbstractElasticsearchTest {
+                  RestHighLevelClient client;
+              
+                  @BeforeEach
+                  public void init() {
+                      /* We get Elasticsearch host-port */
+                      String httpHostAddress = container.getHttpHostAddress();
+              
+                      RestClientBuilder clientBuilder = RestClient.builder(HttpHost.create(httpHostAddress));
+                      client = new RestHighLevelClient(clientBuilder);
+                  }
+              
+                  @Test
+                  public void exampleTest() { /* ... */ }
+              }
+              
+      section
+        h3 Scopes - contrôle manuel du cycle de vie
+        font(size="-2")
+          pre
+            code.language-java.
+              ElasticsearchContainer container =
+                      new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
+              
+              container.start();
+              //...
+              container.stop();
+          p ou
+          pre
+            code.language-java.
+              try (ElasticsearchContainer container =
+                           new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4")) {
+                  container.start();
+                  // Stop is called by try-with-resources
+              }
+              
+      section
+        h1 Ryuk
+        
+      section
+        h1 Ryuk
+        img(src="images/ryuk.png" height="60%")
+      
+      section
+        h1 Modules
+        ul.build.build-items
+          li Elasticsearch
+          li Kafka
+          li MySql
+          li RabbitMq
+          li etc...
+          
+      section
+        h2 Modules - Elasticsearch
+        font(size="-2")
+          pre
+            code.language-java.
+              ElasticsearchContainer container =
+                      new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
+                      
+      section
+        h2 Modules - Kafka
+        font(size="-2")
+          pre
+            code.language-java.
+              KafkaContainer kafkaContainer = new KafkaContainer();
+              kafkaContainer.start();
+              
+              /* Get Kafka bootstrap servers for client */
+              kafkaContainer.getBootstrapServers();
+          p ou avec Zookeeper externe
+          pre
+            code.language-java.
+              KafkaContainer kafkaContainer = new KafkaContainer().withExternalZookeeper("localhost:2181");
+              
+      section
+        h2 Container custom
+        font(size="-2")
+          pre
+            code.language-java.
+              @Container
+              GenericContainer redis = new GenericContainer<>("redis:5.0.3-alpine")
+                      .withExposedPorts(6379);
+                      
+      section
+        h1 Spring Boot + Testcontainers
+        
+      section
+        h2 Configuration Spring Boot
+        font(size="-1")
+          pre
+            code.lang-yaml.
+              # application.yml
+              spring:
+                data:
+                  elasticsearch:
+                    cluster-name: my-cluster
+                    cluster-nodes: localhost:9200
+                    
+      section
+        h2 Configuration Spring Boot avec les variables
+        font(size="-1")
+          pre
+            code.lang-yaml.
+              # application.yml
+              spring:
+                data:
+                  elasticsearch:
+                    cluster-name: ${es.cluster}
+                    cluster-nodes: ${es.host}
+                    
+      section
+        img(src="images/boostrap-context.jpg" height="80%")
+                    
+      section
+        h2 Ordre de lancement
+        ol.build.build-items
+          li Lancer Bootstrap context
+          li Lancer Testcontainers
+          li Injecter les variables dans Properties Source
+          li Lancer Application context
+          
+      section
+        font(size="-2")
+          pre
+            code.language-java.
+              public class ElasticsearchBootstrapConfig {
+              
+                  @Bean(destroyMethod = "stop")
+                  public ElasticsearchContainer elasticsearchContainer(ConfigurableEnvironment environment) {
+                    ElasticsearchContainer container =
+                        new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
+                    container.start();
+              
+                    /* Set values of variables that will become available in application.yml */
+                    MapPropertySource propertySource = new MapPropertySource(
+                        "testElastic", ImmutableMap.of(
+                            "es.cluster", "docker-cluster",
+                            "es.host", container.getHttpHostAddress()));
+                    environment.getPropertySources().addFirst(propertySource);
+              
+                    return container;
+                  }
+              }
+          p Cette configuration doit être déclarée dans le fichier <em>META-INF/spring.factories</em>
+          pre
+            code.language-properties.
+              org.springframework.cloud.bootstrap.BootstrapConfiguration=\
+              io.hosuaby.bbltestcontainers.ElasticsearchBootstrapConfig
+              
+      section
+        h2 Lancez les tests!
+        font(size="-2")
+          pre
+            code.language-java.
+              @SpringBootTest
+              class BblTestcontainersApplicationTests {
+              
+                  @Test
+                  void contextLoads() {
+                  }
+              
+              }
+              
+      section
+        h2 Merci pour votre attention !
+        h6 (Je sais, ma présentation est moche)
+ 
     script(src='build/build.js')

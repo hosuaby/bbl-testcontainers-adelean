@@ -9,6 +9,10 @@ var prism = require('bespoke-prism');
 var multimedia = require('bespoke-multimedia');
 var extern = require('bespoke-extern');
 
+require('prismjs');
+require('prismjs/components/prism-java')
+require('prismjs/components/prism-yaml')
+
 // Bespoke.js
 bespoke.from({ parent: 'article.deck', slides: 'section' }, [
   classes(),
