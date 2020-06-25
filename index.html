@@ -9,7 +9,7 @@
   <body>
     <article class="deck">
       <section>
-        <h1>BBL Testcontainers - Adelean - 2020</h1>
+        <h1>BBL Testcontainers - Carrefour - 2020</h1>
       </section>
       <section>
         <h2>La préhistoire</h2><img src="images/jurassic-landscape.jpg" height="30%">
@@ -40,16 +40,16 @@
       </section>
       <section>
         <h3>Les Testcontainers est une extention de JUnit</h3><font size="-2">
-          <pre><code class="language-java">@Testcontainers
+          <pre><code class="language-java">@Testcontainers  // <- ajouter extention
 class ExampleTestWithElasticsearch {
 
-    @Container
+    @Container  // <- déclarer un ou plusieurs containeurs
     ElasticsearchContainer container =
             new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
 
     @Test
     public void exampleTest() {
-        container.getHttpHostAddress();
+        container.getHttpHostAddress();  // <- récuperer le port exposé et s'y connecter
         //...
     }
 }
@@ -63,7 +63,7 @@ class ExampleTestWithElasticsearch {
           <pre><code class="language-java">@Testcontainers
 class ExampleTestWithElasticsearch {
 
-    @Container
+    @Container  // <- containeur partagé
     static ElasticsearchContainer container =
             new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
 
@@ -184,57 +184,21 @@ spring:
       </code></pre></font>
       </section>
       <section>
-        <h2>Configuration Spring Boot avec les variables</h2><font size="-1">
-          <pre><code class="lang-yaml"># application.yml
-spring:
-  data:
-    elasticsearch:
-      cluster-name: ${es.cluster}
-      cluster-nodes: ${es.host}
-      </code></pre></font>
-      </section>
-      <section><img src="images/boostrap-context.jpg" height="80%"></section>
-      <section>
-        <h2>Ordre de lancement</h2>
-        <ol class="build build-items">
-          <li>Lancer Bootstrap context</li>
-          <li>Lancer Testcontainers</li>
-          <li>Injecter les variables dans Properties Source</li>
-          <li>Lancer Application context</li>
-        </ol>
-      </section>
-      <section><font size="-2">
-          <pre><code class="language-java">public class ElasticsearchBootstrapConfig {
-
-    @Bean(destroyMethod = "stop")
-    public ElasticsearchContainer elasticsearchContainer(ConfigurableEnvironment environment) {
-      ElasticsearchContainer container =
-          new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4");
-      container.start();
-
-      /* Set values of variables that will become available in application.yml */
-      MapPropertySource propertySource = new MapPropertySource(
-          "testElastic", ImmutableMap.of(
-              "es.cluster", "docker-cluster",
-              "es.host", container.getHttpHostAddress()));
-      environment.getPropertySources().addFirst(propertySource);
-
-      return container;
-    }
-}</code></pre>
-          <p>Cette configuration doit être déclarée dans le fichier <em>META-INF/spring.factories</em></p>
-          <pre><code class="language-properties">org.springframework.cloud.bootstrap.BootstrapConfiguration=\
-io.hosuaby.bbltestcontainers.ElasticsearchBootstrapConfig
-</code></pre></font></section>
-      <section>
-        <h2>Lancez les tests!</h2><font size="-2">
+        <h2>Strig Boot test + Testcontainers</h2><font size="-2">
           <pre><code class="language-java">@SpringBootTest
-class BblTestcontainersApplicationTests {
+@Testcontainers
+public class CatalogTaskletIntegrationTest {
 
-    @Test
-    void contextLoads() {
+    @Container
+    static ElasticsearchContainer elasticsearch = 
+        new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:6.5.4")
+            .withEnv("cluster.name", "my-cluster");
+
+    @DynamicPropertySource
+    static void elasticsearchProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.data.elasticsearch.cluster-name", () -> "my-cluster");
+        registry.add("spring.data.elasticsearch.cluster-nodes", elasticsearch::getHttpHostAddress);
     }
-
 }
 </code></pre></font>
       </section>
